@@ -32,13 +32,37 @@ endif(UNIX)
 target_include_directories(cork PRIVATE ${INCLUDEDIRS})
 target_include_directories(cork-bin PRIVATE ${INCLUDEDIRS})
 SET_TARGET_PROPERTIES(cork-bin PROPERTIES OUTPUT_NAME cork)
-IF (NOT GMP_FOUND)
-    find_package(GMP REQUIRED)
-ENDIF (NOT GMP_FOUND)
-include_directories(${GMP_INCLUDE_DIRS})
-target_link_libraries(cork-bin PRIVATE cork ${GMP_LIBRARIES})
-target_compile_definitions(cork PRIVATE 
-  -DNO_TIMER -DREDUCED -DTRILIBRARY -DANSI_DECLARATORS )
+if(MSVC)
+  target_compile_definitions(cork PRIVATE 
+    -DNO_TIMER
+    -DREDUCED
+    -DTRILIBRARY
+    -DANSI_DECLARATORS
+    -D_USE_MATH_DEFINES
+    -DNOMINMAX
+  )
+else()
+  target_compile_definitions(cork PRIVATE 
+    -DNO_TIMER
+    -DREDUCED
+    -DTRILIBRARY
+    -DANSI_DECLARATORS
+  )
+endif()
+
+message(STATUS ${CXX_COMPILER_ID})
+if(MSVC)
+  target_compile_definitions(cork-bin PRIVATE 
+    -DNO_TIMER -DREDUCED -DTRILIBRARY -DANSI_DECLARATORS -D_USE_MATH_DEFINES -DNOMINMAX)
+  include_directories("${CMAKE_INSTALL_PREFIX}/include")
+  target_link_libraries(cork-bin PRIVATE cork "${CMAKE_INSTALL_PREFIX}/lib/mpir.lib")
+else()
+  IF (NOT GMP_FOUND)
+      find_package(GMP REQUIRED)
+  ENDIF (NOT GMP_FOUND)
+  include_directories(${GMP_INCLUDE_DIRS})
+  target_link_libraries(cork-bin PRIVATE cork ${GMP_LIBRARIES})
+endif()
 
 INSTALL(TARGETS cork
     LIBRARY DESTINATION lib
